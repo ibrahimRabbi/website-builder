@@ -1,0 +1,267 @@
+﻿Portfolio Builder — System Strategy & Technical Architecture Document
+1. Executive Summary
+This document defines the complete technical workflow, database architecture, API designs, state management flow, payment verification pipeline, and UI/UX implementation strategy for the Portfolio Builder Platform.
+
+
+The platform is designed using a Next.js frontend and a Node.js + Express + Mongoose (MongoDB) backend ecosystem.
+
+
+________________
+
+
+2. Full User Journey & User Experience (UX) Flow
+Step 1: Landing / Dashboard
+* User lands on the portfolio builder landing page.
+* Primary CTA button displayed: "Create Portfolio".
+Step 2: Theme Selection & Editor Entry
+* Clicking "Create Portfolio" redirects the user to the /editor page.
+* The editor loads a dynamic modal/grid displaying available portfolio themes with:
+   * Theme Thumbnail Image & Badges
+   * Theme Name, Description, and Price ($ or BDT)
+   * Hover Action Card with two clear buttons:
+      1. "Preview": Opens a live sandbox preview of the selected theme in a modal or new tab.
+      2. "Buy Theme": Triggers the checkout pipeline.
+Step 3: Checkout & Payment Gateway Integration
+* Clicking "Buy" sends a request to the backend API (/api/v1/payments/create-checkout-session) to generate a secure payment session URL (Stripe, SSLCommerz, Shurjopay, or BKash).
+* User is redirected to the external secure payment gateway page.
+Step 4: Verification & Automated Editor Access
+* Upon successful payment, the gateway redirects to /payment/success?session_id={SESSION_ID}.
+* Next.js frontend calls /api/v1/payments/verify or listens to secure Webhooks from the payment provider.
+* Backend verifies transaction, marks theme ownership in MongoDB (UserThemePurchase collection), and provisions an unlocked workspace.
+* User is automatically redirected back to /editor?theme={THEME_ID}&status=unlocked with full editing capabilities enabled.
+
+
+________________
+
+
+3. Technology Stack & Framework Architecture
+Layer
+	Primary Technology
+	Architectural Role
+	Frontend Framework
+	Next.js (App Router / React 18+)
+	Server-side rendering, dynamic routing, and shell components
+	Styling & Motion
+	Tailwind CSS + Shadcn UI / Framer Motion / Ant design
+	Design system, UI primitives, and UI card transition physics
+	State Management
+	Redux Toolkit / RTK Query
+	Data fetching, asynchronous state caching, and sync orchestration
+	Editor Engine
+	Canvas / Draft State / Craft.js
+	Custom JSON Schema-driven visual builder interface
+	Backend Runtime
+	Node.js + Express.js
+	RESTful HTTP API services and business logic orchestration
+	Database & ODM
+	MongoDB + Mongoose ODM
+	Document store and Object Data Modeling with schema validation
+	Authentication
+	JWT via HttpOnly Cookies
+	Stateless request authentication and session security
+	Payment Ecosystem
+	Stripe
+	Multi-provider checkout flows and automated webhook listeners
+	
+
+
+
+Json Data formet
+
+{
+  "themeId": "theme_123",
+  "sections": [
+    {
+      "id": "hero_section_1",
+      "type": "Hero",
+      "components": {
+        "title": {
+          "text": "Hello, I am Ibrahim",
+          "styles": {
+            "fontSize": "48px",
+            "color": "#FF0000",
+            "fontWeight": "bold",
+            "textAlign": "center"
+          }
+        },
+        "subtitle": {
+          "text": "Full-Stack Web Developer",
+          "styles": {
+            "fontSize": "20px",
+            "color": "#666666"
+          }
+        },
+        "ctaButton": {
+          "label": "Hire Me",
+          "link": "#contact",
+          "styles": {
+            "backgroundColor": "#0070f3",
+            "borderRadius": "8px"
+          }
+        }
+      }
+    }
+  ]
+}
+
+
+________________
+
+
+4. Mongoose Database Schema Design
+1. User Schema (User.js)
+const userSchema = new mongoose.Schema({
+
+
+  name: { type: String, required: true },
+
+
+  email: { type: String, required: true, unique: true },
+
+
+  passwordHash: { type: String, required: true },
+
+
+  role: { type: String, enum: ['user', 'admin'], default: 'user' },
+
+
+  createdAt: { type: Date, default: Date.now }
+
+
+});
+2. Theme Schema (Theme.js)
+const themeSchema = new mongoose.Schema({
+
+
+  title: { type: String, required: true },
+
+
+  slug: { type: String, required: true, unique: true },
+
+
+  description: { type: String },
+
+
+  thumbnailUrl: { type: String, required: true },
+
+
+  previewUrl: { type: String, required: true },
+
+
+  price: { type: Number, required: true }, // 0 for free themes
+
+
+  currency: { type: String, default: 'USD' },
+
+
+  isActive: { type: Boolean, default: true },
+
+
+  schemaDefinition: { type: Object, required: true } // Defines JSON structure for theme layout
+
+
+}, { timestamps: true });
+3. Purchase / Transaction Schema (Purchase.js)
+const purchaseSchema = new mongoose.Schema({
+
+
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+
+
+  themeId: { type: mongoose.Schema.Types.ObjectId, ref: 'Theme', required: true },
+
+
+  transactionId: { type: String, required: true, unique: true },
+
+
+  paymentProvider: { type: String, enum: ['stripe', 'sslcommerz', 'bkash'], required: true },
+
+
+  amountPaid: { type: Number, required: true },
+
+
+  currency: { type: String, required: true },
+
+
+  status: { type: String, enum: ['pending', 'completed', 'failed'], default: 'pending' }
+
+
+}, { timestamps: true });
+4. Portfolio Document Schema (Portfolio.js)
+const portfolioSchema = new mongoose.Schema({
+
+
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+
+
+  themeId: { type: mongoose.Schema.Types.ObjectId, ref: 'Theme', required: true },
+
+
+  title: { type: String, default: 'My Portfolio' },
+
+
+  contentData: { type: Object, default: {} }, // User custom text, images, projects, links
+
+
+  isPublished: { type: Boolean, default: false },
+
+
+  customDomain: { type: String, unique: true, sparse: true }
+
+
+}, { timestamps: true });
+
+
+________________
+
+
+5. API Endpoints Architecture
+Theme & Catalog APIs
+* GET /api/v1/themes — Fetch all active portfolio themes with pricing & thumbnail specs.
+* GET /api/v1/themes/:id — Fetch single theme metadata and preview layout definitions.
+Payment & Checkout APIs
+* POST /api/v1/payments/create-session — Generate secure gateway session link.
+* POST /api/v1/payments/webhook — Asynchronous server-to-server webhook endpoint for payment confirmation.
+* GET /api/v1/payments/verify-status?transactionId=xyz — Frontend client verification query.
+Editor & Portfolio State APIs
+* GET /api/v1/portfolios/me — Fetch logged-in user's active portfolio state.
+* POST /api/v1/portfolios/save — Save/Update user's customized portfolio layout content.
+* POST /api/v1/portfolios/publish — Publish final portfolio to custom slug or domain.
+
+
+________________
+
+
+6. Crucial Architectural Considerations & Enhancements
+* Webhook Reliability vs Direct Redirection:
+Never rely solely on client-side redirect query strings to unlock theme editing access. Webhook verification ensures payment confirmation even if the user closes their browser window during redirection.
+* Free vs Paid Themes Handling:
+If theme.price === 0, skip payment gateway completely and directly initialize the editor workspace via a POST /api/v1/portfolios/initialize route.
+* Auto-Saving in Editor:
+Implement debounced auto-save (e.g., 2000ms delay) on the Next.js frontend using RTK Query/Axios to sync local JSON state seamlessly back to MongoDB.
+* Security & Ownership Checks:
+Implement middleware on express server (verifyThemeOwnership) to prevent unauthorized editing of premium themes unless a verified completed purchase record exists in purchases collection.
+
+
+________________
+
+
+7. Sidebar Inspector & Property Panel Architecture (Webflow-Style Editor Layout)
+1. Workspace & Editor UI Layout
+   * Top Control Bar:
+Displays overall workspace controls including theme switcher, device viewport toggles (Desktop, Tablet, Mobile), undo/redo actions, auto-save status indicators, live preview link, and the primary "Publish" button.
+   * Left Main Canvas Area:
+Renders the interactive WYSIWYG portfolio preview inside an isolated iframe or virtual canvas shell. Component elements render selection borders, hover highlights, and drag handles corresponding to the dynamic JSON node tree.
+   * Right Property Panel (Style & Content Inspector):
+Context-aware sidebar panel inspired by Webflow/Framer. When an element on the canvas is selected, the inspector dynamically populates corresponding tabs for styling (Typography, Color, Spacing, Layout) and content editing (Text fields, Image uploads, Link targets).
+2. React State Management & Inspector Sync Architecture
+      * Node Selection Flow:
+Clicking any editable element on the canvas updates the global editor state (e.g., setting selectedNodeId via Redux Toolkit / Zustand).
+      * Dynamic Controls Rendering:
+The right property panel reads selectedNodeId from state, extracts the node's schema properties, and dynamically renders dedicated UI form controls:
+         * Typography & Color: Font family dropdowns, font weight, size sliders, color pickers, and alignment controls.
+         * Spacing & Layout: Interactive margin/padding visual box model, flex/grid properties, width/height dimensions.
+         * Backgrounds & Borders: Fill colors, image overlays, border radius, and box shadows.
+         * Content Fields: Direct text input controls, asset managers for images, and URL link destination pickers.
+         * Real-Time Tree Updates & Persistence:
+Input adjustments in the inspector trigger targeted state dispatches (e.g., updateNodeStyle({ nodeId, path, value })), mutating the core JSON document structure instantly in memory to reflect real-time updates on the canvas. State changes trigger a debounced persistence service (2000ms delay) that sends a POST /api/v1/portfolios/save payload back to MongoDB.

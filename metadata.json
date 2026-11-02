@@ -1,0 +1,6 @@
+{
+  "name": "FolioCraft — Visual Portfolio Builder",
+  "description": "Visual drag-and-drop portfolio builder and code editor with themes, dynamic schema customization, responsive canvas, and real-time inspector.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
