@@ -319,7 +319,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
       </section>
 
       {/* JSON Schema Definition Showcase (Section 3 in doc) */}
-      <section id="json-schema" className="px-6 lg:px-12 py-20 border-b border-slate-800">
+      {/* <section id="json-schema" className="px-6 lg:px-12 py-20 border-b border-slate-800">
         <div className="max-w-5xl mx-auto space-y-8">
           <div>
             <span className="text-xs font-mono text-indigo-400 block mb-1">Standardized JSON Data Format</span>
@@ -371,7 +371,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
             </pre>
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* Footer */}
       <footer className="px-6 lg:px-12 py-8 text-xs text-slate-500 border-t border-slate-800/80 mt-auto">

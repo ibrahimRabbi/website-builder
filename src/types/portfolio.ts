@@ -32,28 +32,13 @@ export interface ImageComponentData {
   styles: ComponentStyle;
 }
 
-export interface ProjectItem {
-  id: string;
-  title: string;
-  description: string;
-  tag: string;
-  link: string;
-  imageUrl?: string;
-  year?: string;
-}
-
-export interface SkillItem {
-  name: string;
-  category: string;
-  level?: number;
-}
 
 export interface VideoFilmItem {
   id: string;
   title: string;
   client?: string;
-  category: string;
-  role: string;
+  category?: string;
+  role?: string;
   year?: string;
   duration?: string;
   videoUrl?: string;
@@ -62,66 +47,31 @@ export interface VideoFilmItem {
   lensSpecs?: string;
   summary?: string;
   aspectRatio?: string;
+  col?: 'left' | 'right';
+  isTall?: boolean;
 }
 
-export interface GearCategory {
-  category: string;
-  items: string[];
-}
+
 
 export interface SectionComponents {
   badge?: TextComponentData;
   title?: TextComponentData;
   subtitle?: TextComponentData;
   bio?: TextComponentData;
+  logo?: TextComponentData;
   ctaButton?: ButtonComponentData;
   secondaryButton?: ButtonComponentData;
   avatar?: ImageComponentData;
-  videoUrl?: string;
-  videoPoster?: string;
-  videoCaption?: string;
-  cameraSpecs?: string;
-  socials?: {
-    github?: string;
-    linkedin?: string;
-    twitter?: string;
-    email?: string;
-    instagram?: string;
-    vimeo?: string;
-    youtube?: string;
-  };
-  projects?: ProjectItem[];
-  films?: VideoFilmItem[];
-  gear?: GearCategory[];
-  clients?: string[];
-  skills?: SkillItem[];
-  experience?: Array<{
-    id: string;
-    role: string;
-    company: string;
-    period: string;
-    description: string;
-  }>;
-  contactEmail?: string;
-  contactLocation?: string;
   [key: string]: any;
 }
 
-export type SectionType = 
-  | 'Hero' 
-  | 'Showreel'
-  | 'About' 
-  | 'Projects' 
-  | 'Films'
-  | 'ColorLab'
-  | 'Gear'
-  | 'Rates'
-  | 'Clients'
-  | 'Skills' 
-  | 'Experience' 
-  | 'Testimonials' 
-  | 'Contact' 
-  | 'Footer';
+export type SectionType = 'Navbar' | 'Hero' | 'Stats' | 'Showreel' | 'Films' | 'ColorLab' | 'Gear' | 'Rates' | 'Footer'
+  // Atelier Monolith
+  | 'ArchNavbar' | 'ArchHeader' | 'FloorPlan' | 'ArchSpecs' | 'ArchSuite' | 'ArchFooter'
+  //law
+  | 'LawNavbar' | 'LawHero' | 'LawStats' | 'LawPractice' | 'LawEstimator' | 'LawMatters' | 'LawTestimonials' | 'LawChambers' | 'LawFooter'
+  //musician
+    | 'MusicNavbar' | 'MusicHero' | 'MusicTracks' | 'MusicTour' | 'MusicDisco' | 'MusicMerch' | 'MusicAbout' | 'MusicFooter'
 
 export interface PortfolioSection {
   id: string;
@@ -155,6 +105,7 @@ export interface ThemeMetadata {
   fontFamily: string;
   themeStyle: 'dark' | 'light' | 'neo' | 'glass';
   initialSchema: PortfolioSchema;
+  allowedSections: SectionType[];
 }
 
 export type ViewportMode = 'desktop' | 'tablet' | 'mobile';
